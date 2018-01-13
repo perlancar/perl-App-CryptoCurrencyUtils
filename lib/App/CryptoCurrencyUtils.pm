@@ -9,7 +9,7 @@ use warnings;
 
 our %SPEC;
 
-$SPEC{cmc_currency} = {
+$SPEC{cmc_go_currency} = {
     v => 1.1,
     summary => 'Open CMC (coinmarketcap.com) currency page',
     args => {
@@ -20,7 +20,7 @@ $SPEC{cmc_currency} = {
         },
     },
 };
-sub cmc_currency {
+sub cmc_go_currency {
     require CryptoCurrency::Catalog;
     my %args = @_;
 
