@@ -24,7 +24,7 @@ print Perinci::Result::Format::Lite::format($res, 'text');
 
 =head1 SYNOPSIS
 
- % grepcrypto <symbol-or-name>
+ % grepcoin <symbol-or-name>
 
 
 =head1 DESCRIPTION
