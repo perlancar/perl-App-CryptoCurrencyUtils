@@ -9,15 +9,30 @@ use warnings;
 
 our %SPEC;
 
+our %arg_symbol_or_name = (
+    symbol_or_name => {
+        schema => 'cryptocurrency::symbol_or_name*',
+        req => 1,
+        pos => 0,
+    },
+);
+
+our %arg_symbols_or_names = (
+    symbols_or_names => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'symbol_or_name',
+        schema => ['array*', of=>'cryptocurrency::symbol_or_name*'],
+        req => 1,
+        pos => 0,
+        greedy => 1,
+    },
+);
+
 $SPEC{coin_cmc} = {
     v => 1.1,
     summary => "Go to coin's CMC (coinmarketcap.com) currency page",
     args => {
-        symbol_or_name => {
-            schema => 'cryptocurrency::symbol_or_name*',
-            req => 1,
-            pos => 0,
-        },
+        %arg_symbols_or_names,
     },
 };
 sub coin_cmc {
@@ -26,22 +41,24 @@ sub coin_cmc {
 
     my $cat = CryptoCurrency::Catalog->new;
 
-    my $cur0 = $args{symbol_or_name}
-        or return [400, "Please specify symbol/name"];
+  CURRENCY:
+    for my $cur0 (@{ $args{symbols_or_names} }) {
 
-    my $cur;
-    {
-        eval { $cur = $cat->by_symbol($cur0) };
-        last if $cur;
-        eval { $cur = $cat->by_name($cur0) };
-        last if $cur;
-        return [404, "No such cryptocurrency symbol/name"];
+        my $cur;
+        {
+            eval { $cur = $cat->by_symbol($cur0) };
+            last if $cur;
+            eval { $cur = $cat->by_name($cur0) };
+            last if $cur;
+            warn "No such cryptocurrency symbol/name '$cur0'";
+            next CURRENCY;
+        }
+
+        require Browser::Open;
+        my $url = "https://coinmarketcap.com/currencies/$cur->{safename}/";
+        my $err = Browser::Open::open_browser($url);
+        return [500, "Can't open browser for '$url'"] if $err;
     }
-
-    require Browser::Open;
-    my $err = Browser::Open::open_browser(
-        "https://coinmarketcap.com/currencies/$cur->{safename}/");
-    return [500, "Can't open browser"] if $err;
     [200];
 }
 
@@ -55,11 +72,7 @@ there is a difference.
 
 _
     args => {
-        symbol_or_name => {
-            schema => 'cryptocurrency::symbol_or_name*',
-            req => 1,
-            pos => 0,
-        },
+        %arg_symbols_or_names,
     },
 };
 sub coin_mno {
@@ -70,22 +83,25 @@ sub coin_mno {
 
     my $cat = CryptoCurrency::Catalog->new;
 
-    my $cur0 = $args{symbol_or_name}
-        or return [400, "Please specify symbol/name"];
+  CURRENCY:
+    for my $cur0 (@{ $args{symbols_or_names} }) {
 
-    my $cur;
-    {
-        eval { $cur = $cat->by_symbol($cur0) };
-        last if $cur;
-        eval { $cur = $cat->by_name($cur0) };
-        last if $cur;
-        return [404, "No such cryptocurrency symbol/name"];
+        my $cur;
+        {
+            eval { $cur = $cat->by_symbol($cur0) };
+            last if $cur;
+            eval { $cur = $cat->by_name($cur0) };
+            last if $cur;
+            warn "No such cryptocurrency symbol/name '$cur0'";
+            next CURRENCY;
+        }
+
+        require Browser::Open;
+        my $url = "https://masternodes.online/currencies/" .
+            URI::Escape::uri_escape($cur->{symbol})."/";
+        my $err = Browser::Open::open_browser($url);
+        return [500, "Can't open browser for '$url'"] if $err;
     }
-
-    require Browser::Open;
-    my $err = Browser::Open::open_browser(
-        "https://masternodes.online/currencies/".URI::Escape::uri_escape($cur->{symbol})."/");
-    return [500, "Can't open browser"] if $err;
     [200];
 }
 
