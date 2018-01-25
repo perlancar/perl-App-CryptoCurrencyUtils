@@ -1,3 +1,11 @@
+0.005   2018-01-26 (PERLANCAR)
+
+        - Rename grepcoin to grep-coin, use AppBase::Grep as base (to get -i,
+          -v, -c, -q, etc).
+
+        - Add utility: list-coins.
+
+
 0.004   2018-01-21 (PERLANCAR)
 
 	- coin-cmc, coin-mno: Accept many coins as arguments.
