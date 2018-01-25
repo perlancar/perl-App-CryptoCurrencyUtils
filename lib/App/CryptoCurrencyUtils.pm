@@ -105,6 +105,24 @@ sub coin_mno {
     [200];
 }
 
+$SPEC{list_coins} = {
+    v => 1.1,
+    summary => "List cryptocurrency coins",
+    description => <<'_',
+
+This utility lists coins from <pm:CryptoCurrency::Catalog>, which in turn gets
+its list from <https://coinmarketcap.com/>.
+
+_
+    args => {
+    },
+};
+sub list_coins {
+    require CryptoCurrency::Catalog;
+
+    [200, "OK", [CryptoCurrency::Catalog->new->all_data]];
+}
+
 1;
 # ABSTRACT: CLI utilities related to cryptocurrencies
 
