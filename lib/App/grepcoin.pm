@@ -13,7 +13,7 @@ use Perinci::Sub::Util qw(gen_modified_sub);
 our %SPEC;
 
 gen_modified_sub(
-    output_name => 'grepcoin',
+    output_name => 'grep_coin',
     base_name   => 'AppBase::Grep::grep',
     summary     => 'Grep cryptocurrency coins',
     description => <<'_',
