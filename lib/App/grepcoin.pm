@@ -22,7 +22,17 @@ Greps list of coins from <pm:CryptoCurrency::Catalog>, which in turn gets its
 list from <https://coinmarketcap.com/>.
 
 _
-    add_args    => {
+    remove_args => ['pattern'],
+    modify_args => {
+        regexps => sub {
+            my $arg = shift;
+            $arg->{pos} = 0;
+            $arg->{greedy} = 1;
+        },
+        ignore_case => sub {
+            my $arg = shift;
+            $arg->{default} = 1;
+        },
     },
     output_code => sub {
         require CryptoCurrency::Catalog;
