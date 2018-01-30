@@ -1,3 +1,8 @@
+0.007   2018-01-30 (PERLANCAR)
+
+	- Add utilities: list-exchanges, grep-exchange, exchange-cmc.
+
+
 0.006   2018-01-30 (PERLANCAR)
 
 	- grep-coin: accept multiple patterns, defaults to ignore-case.
