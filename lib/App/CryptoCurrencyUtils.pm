@@ -9,19 +9,38 @@ use warnings;
 
 our %SPEC;
 
-our %arg_symbol_or_name = (
-    symbol_or_name => {
+our %arg_coin = (
+    coin => {
         schema => 'cryptocurrency::symbol_or_name*',
         req => 1,
         pos => 0,
     },
 );
 
-our %arg_symbols_or_names = (
-    symbols_or_names => {
+our %arg_coins = (
+    coins => {
         'x.name.is_plural' => 1,
-        'x.name.singular' => 'symbol_or_name',
+        'x.name.singular' => 'coin',
         schema => ['array*', of=>'cryptocurrency::symbol_or_name*'],
+        req => 1,
+        pos => 0,
+        greedy => 1,
+    },
+);
+
+our %arg_exchange = (
+    exchange => {
+        schema => 'cryptoexchange::name*',
+        req => 1,
+        pos => 0,
+    },
+);
+
+our %arg_exchanges = (
+    exchanges => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'exchange',
+        schema => ['array*', of=>'cryptoexchange::name*'],
         req => 1,
         pos => 0,
         greedy => 1,
@@ -32,7 +51,7 @@ $SPEC{coin_cmc} = {
     v => 1.1,
     summary => "Go to coin's CMC (coinmarketcap.com) currency page",
     args => {
-        %arg_symbols_or_names,
+        %arg_coins,
     },
 };
 sub coin_cmc {
@@ -42,7 +61,7 @@ sub coin_cmc {
     my $cat = CryptoCurrency::Catalog->new;
 
   CURRENCY:
-    for my $cur0 (@{ $args{symbols_or_names} }) {
+    for my $cur0 (@{ $args{coins} }) {
 
         my $cur;
         {
@@ -72,7 +91,7 @@ there is a difference.
 
 _
     args => {
-        %arg_symbols_or_names,
+        %arg_coins,
     },
 };
 sub coin_mno {
@@ -84,7 +103,7 @@ sub coin_mno {
     my $cat = CryptoCurrency::Catalog->new;
 
   CURRENCY:
-    for my $cur0 (@{ $args{symbols_or_names} }) {
+    for my $cur0 (@{ $args{coins} }) {
 
         my $cur;
         {
@@ -99,6 +118,38 @@ sub coin_mno {
         require Browser::Open;
         my $url = "https://masternodes.online/currencies/" .
             URI::Escape::uri_escape($cur->{symbol})."/";
+        my $err = Browser::Open::open_browser($url);
+        return [500, "Can't open browser for '$url'"] if $err;
+    }
+    [200];
+}
+
+$SPEC{exchange_cmc} = {
+    v => 1.1,
+    summary => "Go to exchange's CMC (coinmarketcap.com) exchange page",
+    args => {
+        %arg_exchanges,
+    },
+};
+sub exchange_cmc {
+    require CryptoExchange::Catalog;
+    my %args = @_;
+
+    my $cat = CryptoExchange::Catalog->new;
+
+  CURRENCY:
+    for my $xchg0 (@{ $args{exchanges} }) {
+
+        my $xchg;
+        {
+            eval { $xchg = $cat->by_name($xchg0) };
+            last if $xchg;
+            warn "No such cryptoexchange name '$xchg0'";
+            next CURRENCY;
+        }
+
+        require Browser::Open;
+        my $url = "https://coinmarketcap.com/exchanges/$xchg->{safename}/";
         my $err = Browser::Open::open_browser($url);
         return [500, "Can't open browser for '$url'"] if $err;
     }
@@ -121,6 +172,25 @@ sub list_coins {
     require CryptoCurrency::Catalog;
 
     [200, "OK", [CryptoCurrency::Catalog->new->all_data]];
+}
+
+
+$SPEC{list_exchanges} = {
+    v => 1.1,
+    summary => "List cryptocurrency exchanges",
+    description => <<'_',
+
+This utility lists cryptocurrency exchanges from <pm:CryptoExchange::Catalog>,
+which in turn gets its list from <https://coinmarketcap.com/>.
+
+_
+    args => {
+    },
+};
+sub list_exchanges {
+    require CryptoExchange::Catalog;
+
+    [200, "OK", [CryptoExchange::Catalog->new->all_data]];
 }
 
 1;
