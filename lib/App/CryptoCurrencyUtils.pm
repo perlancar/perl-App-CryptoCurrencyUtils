@@ -47,14 +47,14 @@ our %arg_exchanges = (
     },
 );
 
-$SPEC{coin_cmc} = {
+$SPEC{open_coin_cmc} = {
     v => 1.1,
-    summary => "Go to coin's CMC (coinmarketcap.com) currency page",
+    summary => "Open coin's CMC (coinmarketcap.com) currency page in the browser",
     args => {
         %arg_coins,
     },
 };
-sub coin_cmc {
+sub open_coin_cmc {
     require CryptoCurrency::Catalog;
     my %args = @_;
 
@@ -81,9 +81,9 @@ sub coin_cmc {
     [200];
 }
 
-$SPEC{coin_mno} = {
+$SPEC{open_coin_mno} = {
     v => 1.1,
-    summary => "Go to coin's MNO (masternodes.online) currency page",
+    summary => "Open coin's MNO (masternodes.online) currency page in the browser",
     description => <<'_',
 
 Currently does not perform any translation between CMC -> MNO currency code if
@@ -94,7 +94,7 @@ _
         %arg_coins,
     },
 };
-sub coin_mno {
+sub open_coin_mno {
     require CryptoCurrency::Catalog;
     require URI::Escape;
 
@@ -124,14 +124,14 @@ sub coin_mno {
     [200];
 }
 
-$SPEC{exchange_cmc} = {
+$SPEC{open_exchange_cmc} = {
     v => 1.1,
-    summary => "Go to exchange's CMC (coinmarketcap.com) exchange page",
+    summary => "Open exchange's CMC (coinmarketcap.com) exchange page in the browser",
     args => {
         %arg_exchanges,
     },
 };
-sub exchange_cmc {
+sub open_exchange_cmc {
     require CryptoExchange::Catalog;
     my %args = @_;
 
