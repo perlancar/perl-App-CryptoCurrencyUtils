@@ -147,7 +147,7 @@ sub coin_cmc_summary {
     }
 
     my $resmeta = {
-        'table.fields' => [qw/symbol name rank price_usd price_btc/],
+        'table.field_orders' => [qw/symbol name rank/, qr/^price_/ => sub { $_[0] cmp $_[1] }],
     };
 
     [200, "OK", \@rows, $resmeta];
