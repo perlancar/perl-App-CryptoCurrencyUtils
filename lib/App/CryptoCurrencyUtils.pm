@@ -29,6 +29,16 @@ our %arg_coins = (
     },
 );
 
+our %arg_coins_opt = (
+    coins => {
+        'x.name.is_plural' => 1,
+        'x.name.singular' => 'coin',
+        schema => ['array*', of=>'cryptocurrency::symbol_or_name*'],
+        pos => 0,
+        greedy => 1,
+    },
+);
+
 our %arg_exchange = (
     exchange => {
         schema => 'cryptoexchange::name*',
@@ -92,9 +102,11 @@ $SPEC{coin_cmc_summary} = {
 Currently retrieves https://api.coinmarketcap.com/v1/ticker/<coin-id>/ and
 return the data in a table.
 
+If no coins are specified, will return global data.
+
 _
     args => {
-        %arg_coins,
+        %arg_coins_opt,
         %arg_convert,
     },
 };
@@ -104,6 +116,10 @@ sub coin_cmc_summary {
     my %args = @_;
 
     my $cat = CryptoCurrency::Catalog->new;
+
+    unless ($args{coins} && @{ $args{coins} }) {
+        return global_cmc_summary();
+    }
 
     my @rows;
   CURRENCY:
@@ -135,6 +151,31 @@ sub coin_cmc_summary {
     };
 
     [200, "OK", \@rows, $resmeta];
+}
+
+$SPEC{global_cmc_summary} = {
+    v => 1.1,
+    summary => "Get global CMC (coinmarketcap.com) summary",
+    description => <<'_',
+
+Currently retrieves https://api.coinmarketcap.com/v1/ticker/<coin-id>/ and
+
+_
+    args => {
+        %arg_convert,
+    },
+};
+sub global_cmc_summary {
+    my %args = @_;
+
+    my $res = _get_json_cmc(
+        "https://api.coinmarketcap.com/v1/global/".
+            ($args{convert} ? "?convert=$args{convert}" : ""));
+    unless ($res->[0] == 200) {
+        return [500, "Can't get API result: $res->[0] - $res->[1]"];
+    }
+
+    [200, "OK", $res->[2]];
 }
 
 $SPEC{open_coin_cmc} = {
