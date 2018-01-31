@@ -6,6 +6,7 @@ package App::CryptoCurrencyUtils;
 use 5.010001;
 use strict;
 use warnings;
+use Log::ger;
 
 our %SPEC;
 
@@ -46,6 +47,95 @@ our %arg_exchanges = (
         greedy => 1,
     },
 );
+
+our %arg_convert = (
+    convert => {
+        schema => ['str*', in=>["AUD", "BRL", "CAD", "CHF", "CLP", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF", "IDR", "ILS", "INR", "JPY", "KRW", "MXN", "MYR", "NOK", "NZD", "PHP", "PKR", "PLN", "RUB", "SEK", "SGD", "THB", "TRY", "TWD", "ZAR"]],
+    },
+);
+
+sub _get_json {
+    require HTTP::Tiny;
+    require JSON::MaybeXS;
+
+    my ($url) = @_;
+
+    my $res = HTTP::Tiny->new->get($url);
+    return [$res->{status}, $res->{reason}] unless $res->{success};
+
+    my $data;
+    eval { $data = JSON::MaybeXS::decode_json($res->{content}) };
+    return [500, "Can't decode JSON: $@"] if $@;
+
+    [$res->{status}, $res->{reason}, $data];
+}
+
+sub _get_json_cmc {
+    my $url = shift;
+    my $res = _get_json($url);
+
+    {
+        last unless $res->[0] == 200;
+        if (ref($res) eq 'HASH' && $res->{error}) {
+            $res = [500, "Got error response from CMC API: $res->{error}"];
+            last;
+        }
+    }
+    $res;
+}
+
+$SPEC{coin_cmc_summary} = {
+    v => 1.1,
+    summary => "Get coin's CMC (coinmarketcap.com) summary",
+    description => <<'_',
+
+Currently retrieves https://api.coinmarketcap.com/v1/ticker/<coin-id>/ and
+return the data in a table.
+
+_
+    args => {
+        %arg_coins,
+        %arg_convert,
+    },
+};
+sub coin_cmc_summary {
+    require CryptoCurrency::Catalog;
+
+    my %args = @_;
+
+    my $cat = CryptoCurrency::Catalog->new;
+
+    my @rows;
+  CURRENCY:
+    for my $cur0 (@{ $args{coins} }) {
+
+        my $cur;
+        {
+            eval { $cur = $cat->by_symbol($cur0) };
+            last if $cur;
+            eval { $cur = $cat->by_name($cur0) };
+            last if $cur;
+            warn "No such cryptocurrency symbol/name '$cur0'";
+            next CURRENCY;
+        }
+
+        my $res = _get_json_cmc(
+            "https://api.coinmarketcap.com/v1/ticker/$cur->{safename}/".
+                ($args{convert} ? "?convert=$args{convert}" : ""));
+        unless ($res->[0] == 200) {
+            log_error("Can't get API result for $cur->{name}: $res->[0] - $res->[1]");
+            next CURRENCY;
+        }
+        delete $res->[2][0]{id};
+        push @rows, $res->[2][0];
+    }
+
+    my $resmeta = {
+        'table.fields' => [qw/symbol name rank price_usd price_btc/],
+    };
+
+    [200, "OK", \@rows, $resmeta];
+}
 
 $SPEC{open_coin_cmc} = {
     v => 1.1,
