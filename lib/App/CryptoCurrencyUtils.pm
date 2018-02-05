@@ -324,6 +324,57 @@ sub list_exchanges {
     [200, "OK", [CryptoExchange::Catalog->new->all_data]];
 }
 
+$SPEC{list_cmc_coins} = {
+    v => 1.1,
+    summary => "List of all coins listed on coinmarketcap.com (CMC) ".
+        "along with their marketcaps, ranks, etc",
+    description => <<'_',
+
+This utility basically parses <https://coinmarketcap.com/all/views/all/> into
+table data.
+
+_
+    args => {
+    },
+};
+sub list_cmc_coins {
+    require HTTP::Tiny;
+
+    my $res = HTTP::Tiny->new->get("https://coinmarketcap.com/all/views/all/");
+    return [$res->{status}, $res->{reason}] unless $res->{success};
+
+    my @coins;
+
+    # we capture the records first to speed up otherwise-glacial matching
+    my @trs;
+    while ($res->{content} =~ m!(<tr \s id="id-[\w-]+".+?</tr>)!gsx) {
+        push @trs, $1;
+    }
+    #say "D:found ", scalar(@trs), " coins";
+
+    my $i = 0;
+    for my $tr (@trs) {
+        $i++;
+        $tr =~
+            m!<tr \s id="id-(?<safename>[\w-]+)"[^>]*>.+?
+              <td \s class="text-center">\s*(?<rank>\d+)\s*</td>.+?
+              <td \s class="[^"]*?col-symbol">(?<symbol>[^<]+)<.+?
+              <td \s class="[^"]*?market-cap[^"]*" \s data-usd="(?<mktcap_usd>[^"]+)" \s data-btc="(?<mktcap_btc>[^"]+)".+?
+              <a \s href="[^"]+" \s class="price" \s data-usd="(?<price_usd>[^"]+)" \s data-btc="(?<price_btc>[^"]+)".+?
+              \s data-supply="(?<supply>[^"]+)".+?
+              <a \s href="[^"]+" \s class="volume" \s data-usd="(?<volume_usd>[^"]+)" \s data-btc="(?<volume_btc>[^"]+)".+?
+             !sx
+                 or die "Can't parse row #$i";
+        push @coins, {%+};
+    }
+
+    my $resmeta = {
+        'table.fields'       => [qw/rank safename symbol mktcap_usd mktcap_btc price_usd price_btc supply volume_usd volume_btc/],
+        #'table.field_aligns' => [qw/left left     left   right      right     right     right     right  right      right/], # ugh, makes rendering so slow
+    };
+    [200, "OK", \@coins, $resmeta];
+}
+
 1;
 # ABSTRACT: CLI utilities related to cryptocurrencies
 
