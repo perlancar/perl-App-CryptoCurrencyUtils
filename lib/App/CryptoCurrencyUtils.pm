@@ -297,12 +297,37 @@ its list from <https://coinmarketcap.com/>.
 
 _
     args => {
+        symbols => {
+            summary => 'Only list symbols',
+            schema => 'true*',
+        },
+        safenames => {
+            summary => 'Only list safenames',
+            schema => 'true*',
+        },
+        names => {
+            summary => 'Only list names',
+            schema => 'true*',
+        },
+    },
+    args_rels => {
+        'choose_one' => [qw/symbols safenames names/],
     },
 };
 sub list_coins {
     require CryptoCurrency::Catalog;
 
-    [200, "OK", [CryptoCurrency::Catalog->new->all_data]];
+    my %args = @_;
+
+    if ($args{symbols}) {
+        [200, "OK", [map {$_->{symbol}} CryptoCurrency::Catalog->new->all_data]];
+    } elsif ($args{safenames}) {
+        [200, "OK", [map {$_->{safename}} CryptoCurrency::Catalog->new->all_data]];
+    } elsif ($args{names}) {
+        [200, "OK", [map {$_->{name}} CryptoCurrency::Catalog->new->all_data]];
+    } else {
+        [200, "OK", [CryptoCurrency::Catalog->new->all_data]];
+    }
 }
 
 
