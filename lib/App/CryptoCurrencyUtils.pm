@@ -12,7 +12,7 @@ our %SPEC;
 
 our %arg_coin = (
     coin => {
-        schema => 'cryptocurrency::symbol_or_name*',
+        schema => 'cryptocurrency::code_or_name*',
         req => 1,
         pos => 0,
     },
@@ -22,7 +22,7 @@ our %arg_coins = (
     coins => {
         'x.name.is_plural' => 1,
         'x.name.singular' => 'coin',
-        schema => ['array*', of=>'cryptocurrency::symbol_or_name*'],
+        schema => ['array*', of=>'cryptocurrency::code_or_name*'],
         req => 1,
         pos => 0,
         greedy => 1,
@@ -33,7 +33,7 @@ our %arg_coins_opt = (
     coins => {
         'x.name.is_plural' => 1,
         'x.name.singular' => 'coin',
-        schema => ['array*', of=>'cryptocurrency::symbol_or_name*'],
+        schema => ['array*', of=>'cryptocurrency::code_or_name*'],
         pos => 0,
         greedy => 1,
     },
@@ -127,11 +127,11 @@ sub coin_cmc_summary {
 
         my $cur;
         {
-            eval { $cur = $cat->by_symbol($cur0) };
+            eval { $cur = $cat->by_code($cur0) };
             last if $cur;
             eval { $cur = $cat->by_name($cur0) };
             last if $cur;
-            warn "No such cryptocurrency symbol/name '$cur0'";
+            warn "No such cryptocurrency code/name '$cur0'";
             next CURRENCY;
         }
 
@@ -147,7 +147,7 @@ sub coin_cmc_summary {
     }
 
     my $resmeta = {
-        'table.field_orders' => [qw/symbol name rank/, qr/^price_/ => sub { $_[0] cmp $_[1] }],
+        'table.field_orders' => [qw/code name rank/, qr/^price_/ => sub { $_[0] cmp $_[1] }],
     };
 
     [200, "OK", \@rows, $resmeta];
@@ -196,11 +196,11 @@ sub open_coin_cmc {
 
         my $cur;
         {
-            eval { $cur = $cat->by_symbol($cur0) };
+            eval { $cur = $cat->by_code($cur0) };
             last if $cur;
             eval { $cur = $cat->by_name($cur0) };
             last if $cur;
-            warn "No such cryptocurrency symbol/name '$cur0'";
+            warn "No such cryptocurrency code/name '$cur0'";
             next CURRENCY;
         }
 
@@ -238,17 +238,17 @@ sub open_coin_mno {
 
         my $cur;
         {
-            eval { $cur = $cat->by_symbol($cur0) };
+            eval { $cur = $cat->by_code($cur0) };
             last if $cur;
             eval { $cur = $cat->by_name($cur0) };
             last if $cur;
-            warn "No such cryptocurrency symbol/name '$cur0'";
+            warn "No such cryptocurrency code/name '$cur0'";
             next CURRENCY;
         }
 
         require Browser::Open;
         my $url = "https://masternodes.online/currencies/" .
-            URI::Escape::uri_escape($cur->{symbol})."/";
+            URI::Escape::uri_escape($cur->{code})."/";
         my $err = Browser::Open::open_browser($url);
         return [500, "Can't open browser for '$url'"] if $err;
     }
@@ -297,8 +297,8 @@ its list from <https://coinmarketcap.com/>.
 
 _
     args => {
-        symbols => {
-            summary => 'Only list symbols',
+        codes => {
+            summary => 'Only list codes',
             schema => 'true*',
         },
         safenames => {
@@ -311,7 +311,7 @@ _
         },
     },
     args_rels => {
-        'choose_one' => [qw/symbols safenames names/],
+        'choose_one' => [qw/codes safenames names/],
     },
 };
 sub list_coins {
@@ -319,8 +319,8 @@ sub list_coins {
 
     my %args = @_;
 
-    if ($args{symbols}) {
-        [200, "OK", [map {$_->{symbol}} CryptoCurrency::Catalog->new->all_data]];
+    if ($args{codes}) {
+        [200, "OK", [map {$_->{code}} CryptoCurrency::Catalog->new->all_data]];
     } elsif ($args{safenames}) {
         [200, "OK", [map {$_->{safename}} CryptoCurrency::Catalog->new->all_data]];
     } elsif ($args{names}) {
