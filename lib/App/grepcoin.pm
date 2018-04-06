@@ -42,7 +42,7 @@ _
         my @coins;
         my $cat = CryptoCurrency::Catalog->new;
         for ($cat->all_data) {
-            push @coins, "$_->{name} ($_->{symbol})\n";
+            push @coins, "$_->{name} ($_->{code})\n";
         }
 
         $args{_source} = sub {
